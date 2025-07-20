@@ -109,7 +109,7 @@ void speed_controller(double speed[3]) {
     current_pos[i] = (i==0) * motorA.currentPosition() + (i==1) * motorB.currentPosition() + (i==2) * motorC.currentPosition(); // Finds current position of motor
     speed[i] = abs(current_pos[i] - pos[i]) * ks; // Position error * speed gain
     speed[i] = constrain(speed[i], speed_prev[i] - 300, speed_prev[i] + 300); // Constrains speed so there aren't any sudden jumps. Essentially substituting for our D term in PID.
-    speed[i] = constrain(speed[i], 0, 1000);
+    speed[i] = constrain(speed[i], 0, 1300);
     //Serial.println("Motor " + String(i) + " - Current: " + current_pos[i] + ", Target: " + pos[i] + ", Error: " + abs(pos[i] - current_pos[i]) + ", Speed: " + speed[i]);
   }
 }

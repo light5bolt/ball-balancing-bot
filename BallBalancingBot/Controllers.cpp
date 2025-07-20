@@ -3,9 +3,9 @@
 #include "Controllers.h"
 
 // PID Constants
-#define kp .9  //.8
-#define ki .015
-#define kd .12
+#define kp .8  //.8
+#define ki .2 //.15
+#define kd .09 //.09
 #define ks 10            // For speed controller
 #define max_output 83.5  // defines maximum output for PID controller (in this case it means the maximum distance from current point to setpoint for both x and y)
 #define max_angle 20     // defines maximum tilt angle that PID controller can output (this will be mapped with max_output so that if max_output is returned, it translates to max_angle)
@@ -31,7 +31,7 @@ void pid_balance(double setpoint_x, double setpoint_y) {
 
   // Only runs if minimum sample time has passed (0.02 seconds or 20 milliseconds)
   //Remember, a higher sample size will reduce max speed as it will only call the run function once per sample
-  if (dt >= 0.02) {
+  if (dt >= 0.01) {
     bool detected = check_detected();  //checks if ball is detected
     coords p = get_coords();           // retrieves ball's position
 
@@ -56,7 +56,7 @@ void pid_balance(double setpoint_x, double setpoint_y) {
 
       // SPIKE FILTERING
       static double prev_output_angles[2] = {output_angles[0], output_angles[1]};  // Store previous angles for spike detection
-      double spike_threshold = 8.0; 
+      double spike_threshold = 12.0; 
       static int spike_count[2] = { 0, 0 };  // Track consecutive spikes
 
       for (int i = 0; i < 2; i++) {
@@ -72,13 +72,14 @@ void pid_balance(double setpoint_x, double setpoint_y) {
         }
         prev_output_angles[i] = output_angles[i];
       }
+      
       // calculates requires speeds for each motors
       speed_controller(speed);
 
       unsigned long move_start = millis();
       while (millis() - move_start < 20) {
         // for each calculated PID value, run the move command for 10ms
-        move_to_angle(-output_angles[0], output_angles[1], 81, speed);
+        move_to_angle(-output_angles[0], output_angles[1], 80, speed);
       }
 
       Serial.println((String) "X angle: " + output_angles[1] + ". Y angle: " + output_angles[0] + ". Speed of motor A: " + speed[0]);
@@ -88,7 +89,8 @@ void pid_balance(double setpoint_x, double setpoint_y) {
       // Check if ball has been undetected for 3 seconds (3000 milliseconds)
       if (t - last_detected_time >= 3000) {
         integ[0] = integ[1] = 0;  // Reset integral terms after 3 seconds
-        Serial.println("Ball not detected for 3 seconds - resetting integral terms");
+        go_home();
+        //Serial.println("Ball not detected for 3 seconds - resetting integral terms");
       }
       //waits and checks again if ball is detected (eliminates error from input)
       delay(10);
