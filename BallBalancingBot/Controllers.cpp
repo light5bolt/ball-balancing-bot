@@ -21,8 +21,8 @@ double speed[3] = { 0, 0, 0 }, speed_prev[3];  // an initialization of the stepp
 double ball_vel[2] = {0,0}, p_prev[2] = {0,0};
 double predict_time = 0.3; 
 
-//Runs X and Y PID Controllers to balance ball at a specific point
-void pid_balance(double setpoint_x, double setpoint_y) {
+//Runs X and Y PID Controllers to balance ball at a specific point. Set print_output to 0 to turn off serial monitor prints every run
+void pid_balance(double setpoint_x, double setpoint_y, bool print_output) {
 
   static unsigned long t_prev = 0;              // Records previous time (uses static so the variable gets remembered through each loop iteration)
   static unsigned long last_detected_time = 0;  // Track when ball was last detected
@@ -76,8 +76,8 @@ void pid_balance(double setpoint_x, double setpoint_y) {
         }
 
         output_angles[i] = constrain(output[i], -max_output, max_output) * (max_angle / max_output);  // scales down PID output and maps it to an angle
-        Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
-        Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
+        //Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
+        //Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
       }
 
       // SPIKE FILTERING
@@ -111,7 +111,7 @@ void pid_balance(double setpoint_x, double setpoint_y) {
         move_to_angle(output_angles[0], -output_angles[1], 80, speed);
       }
 
-      Serial.println((String) "X angle: " + output_angles[1] + ". Y angle: " + output_angles[0] + ". Speed of motor A: " + speed[0]);
+      if (print_output) Serial.println((String) "X angle: " + output_angles[1] + ". Y angle: " + output_angles[0] + ". Speed of motor A: " + speed[0]);
     }
 
     else {
@@ -135,11 +135,58 @@ void pid_balance(double setpoint_x, double setpoint_y) {
 }
 
 //uses the PID controller to move the ball to a point for a specified amount of time (in milliseconds)
-void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay) {
+void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay, bool print_output) {
   unsigned long t_prev = millis();
+  if (print_output) Serial.println((String) "Moving to pt: ( " + setpoint_x + " , " + setpoint_y + " )");
   while (millis() - t_prev < delay) {
-    pid_balance(setpoint_x, setpoint_y);
+    pid_balance(setpoint_x, setpoint_y, 0);
   }
 }
 
+// moves in a line pattern. rx and ry are distance from endpoint to center (0-80). speed: (10-50 ms). repeat: num of times (0 = infinite loop)
+void move_line(double rx, double ry, double speed, int repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
 
+  move_to_point(-rx, -ry, 2000); // moves to start point
+  // move from points (-rx, -ry) to (rx, ry)
+  for (int i = 0; i < cycles; i++) {
+    // calculate amount of intermediate steps
+    double steps = 100; 
+    double steps_x = (2 * rx) / steps;
+    double steps_y = (2 * ry) / steps;
+
+    // forward direction
+    for (int j = 0; j <= steps; j++) {
+      double x = -rx + (j * steps_x);
+      double y = -ry + (j * steps_y);
+      move_to_point(x, y, speed);
+    }
+
+    // backwards direction
+    for (int j = steps; j >= 0; j--) {
+      double x = -rx + (j * steps_x);
+      double y = -ry + (j * steps_y);
+      move_to_point(x, y, speed);
+    }
+  }
+  Serial.println("---------------Command finished--------------");
+}
+
+// Moves in an ellipse pattern. rx = radius in x direction, ry = radius in y direction, speed: (10-50ms), repeat = num of times (0 = infinite loop)
+void move_ellipse(double rx, double ry, double speed, double repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
+  move_to_point(rx, ry, 2000); // moves to start point
+
+  for (int i = 0; i < cycles; i++) {
+    double steps = 100; // number of intermediate steps
+
+    for (int j = 0; j <= steps; j++) {
+      double t = (double)j / steps;
+      double angle = 2 * PI * t;           // Full circle: 0 to 2π
+      double x = rx * cos(angle);
+      double y = ry * sin(angle);
+      move_to_point(x, y, speed);
+    }
+  }
+  Serial.println("---------------Command finished--------------");
+}

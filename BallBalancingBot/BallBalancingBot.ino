@@ -18,5 +18,7 @@ void setup() {
 }
 
 void loop() {
-  pid_balance(0,0);
+  move_line(30, 30, 20, 2);
+
+  move_ellipse(25, 25, 50, 2);
 }
