@@ -19,5 +19,4 @@ void setup() {
 
 void loop() {
   pid_balance(0,0);
-  //test_motor_speed();
 }
