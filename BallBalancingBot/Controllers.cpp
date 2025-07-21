@@ -3,15 +3,23 @@
 #include "Controllers.h"
 
 // PID Constants
-#define kp 1  //.8
+#define kp .8  //.8
 #define ki .2 //.2
-#define kd .25 //.09
-#define max_output 83.5  // defines maximum output for PID controller (in this case it means the maximum distance from current point to setpoint for both x and y)
-#define max_angle 12.5     // defines maximum tilt angle that PID controller can output (this will be mapped with max_output so that if max_output is returned, it translates to max_angle)
+#define kd .09 //.09
+#define kv 0.05 //.05
+#define kp_adj .4 //.4
+#define ki_adj .25 //.25
+#define kd_adj .23 //.23
+#define max_output 83.5  // max X distance away from the center
+#define max_angle 12.5   // max tilt angle
 
 //Variables needed for PID control
 double error[2] = { 0, 0 }, error_prev[2], integ[2] = { 0, 0 }, deriv[2] = { 0, 0 }, output[2], output_angles[2];  // error/error_prev for P, integ for I, deriv for D
-double speed[3] = { 0, 0, 0 }, speed_prev[3];                                                                      // an initialization of the stepper motor speeds
+double speed[3] = { 0, 0, 0 }, speed_prev[3];  // an initialization of the stepper motor speeds
+
+// variables for velocity damping
+double ball_vel[2] = {0,0}, p_prev[2] = {0,0};
+double predict_time = 0.3; 
 
 //Runs X and Y PID Controllers to balance ball at a specific point
 void pid_balance(double setpoint_x, double setpoint_y) {
@@ -38,46 +46,61 @@ void pid_balance(double setpoint_x, double setpoint_y) {
     if (detected) {
       last_detected_time = t;
 
+      // Predictive velocity control
+      ball_vel[0] = (p.y_mm - p_prev[0]) / (dt*50);
+      ball_vel[1] = (p.x_mm - p_prev[1]) / (dt*50);
+
+      p_prev[0] = p.y_mm;
+      p_prev[1] = p.x_mm;
+
+
       for (int i = 0; i < 2; i++) {
         //if (i == 1) continue; // Skip X axis during Y tuning
         //if (i == 0) continue; // Skip Y axis during X tuning
 
         error_prev[i] = error[i];
-        error[i] = (i == 0) ? (p.y_mm - setpoint_y) : (p.x_mm - setpoint_x);  //Calculates error based on ball position
+        double error_current = (i == 0) ? (p.y_mm - setpoint_y) : (p.x_mm - setpoint_x);  //Calculates error based on ball position
+        double v = constrain(ball_vel[i], -1000, 1000); // chooses ball velocity from earlier depending on axis
+        error[i] = error_current; 
         integ[i] += error[i] * dt;                                                       // Calculates integral term by summing up error * dt
         integ[i] = constrain(integ[i], -50, 50);                                         // Constrains integral values to prevent windup
         deriv[i] = (error[i] - error_prev[i]) / dt;                                      //Calculates derivative term by finding rate of change in the given interval
         deriv[i] = isnan(deriv[i]) || isinf(deriv[i]) ? 0 : deriv[i];                    // Simple check to eliminate nonreal or infinite numbers, as derivative is being divided by a number that could be zero
+        //deriv[i] = constrain(deriv[i], -55, 55); // Constrains derivative, which prevents random spikes
 
-        output[i] = kp * error[i] + ki * integ[i] + kd * deriv[i];                                    // Forms output by adding P, I, and D terms. Currently an arbitrary value
-        output_angles[i] = constrain(output[i], -max_output, max_output) * (max_angle / max_output);  // scales down PID output and maps it to an angle
-        if (abs(output_angles[i] - max_angle) < 1) {
-          Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]));
-          Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
+        if (abs(error[i]) < 25) {
+          output[i] = kp_adj * error[i] + ki_adj * integ[i] + kd_adj * deriv[i];
         }
+        else {
+          output[i] = kp * error[i] + ki * integ[i] + kd * deriv[i] - kv*v; // Forms output by adding P, I, and D terms. Currently an arbitrary value
+        }
+
+        output_angles[i] = constrain(output[i], -max_output, max_output) * (max_angle / max_output);  // scales down PID output and maps it to an angle
+        Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
+        Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
       }
 
       // SPIKE FILTERING
-      static double prev_output_angles[2] = {output_angles[0], output_angles[1]};  // Store previous angles for spike detection
-      double spike_threshold = 7.0; 
-      static int spike_count[2] = { 0, 0 };  // Track consecutive spikes
+      // static double prev_output_angles[2] = {output_angles[0], output_angles[1]};  // Store previous angles for spike detection
+      // double spike_threshold = 7.0; 
+      // static int spike_count[2] = { 0, 0 };  // Track consecutive spikes
 
-      for (int i = 0; i < 2; i++) {
-        if (abs(output_angles[i] - prev_output_angles[i]) > spike_threshold) {
-          spike_count[i]++;
-          if (spike_count[i] < 3) {
-            Serial.println((String) "Spike detected on axis " + i +  ": " + output_angles[i] + " -> " + prev_output_angles[i]);  
+      // for (int i = 0; i < 2; i++) {
+      //   if (abs(output_angles[i] - prev_output_angles[i]) > spike_threshold) {
+      //     spike_count[i]++;
+      //     if (spike_count[i] < 3) {
+      //       Serial.println((String) "Spike detected on axis " + i +  ": " + output_angles[i] + " -> " + prev_output_angles[i]);  
             
-            // Allow up to 3 consecutive spikes
-            output_angles[i] = prev_output_angles[i];  // Reject spike
+      //       // Allow up to 3 consecutive spikes
+      //       output_angles[i] = prev_output_angles[i];  // Reject spike
             
-          }
-          // After 3 spikes, allow the change (might be a valid large correction)
-        } else {
-          spike_count[i] = 0;  // Reset counter on normal operation
-        }
-        prev_output_angles[i] = output_angles[i];
-      }
+      //     }
+      //     // After 3 spikes, allow the change (might be a valid large correction)
+      //   } else {
+      //     spike_count[i] = 0;  // Reset counter on normal operation
+      //   }
+      //   prev_output_angles[i] = output_angles[i];
+      // }
       
       // calculates requires speeds for each motors
       speed_controller(speed);
@@ -111,10 +134,12 @@ void pid_balance(double setpoint_x, double setpoint_y) {
   }
 }
 
-
-void move_to_point(double setpoint_x, double setpoint_y, long int delay) {
+//uses the PID controller to move the ball to a point for a specified amount of time (in milliseconds)
+void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay) {
   unsigned long t_prev = millis();
   while (millis() - t_prev < delay) {
     pid_balance(setpoint_x, setpoint_y);
   }
 }
+
+
