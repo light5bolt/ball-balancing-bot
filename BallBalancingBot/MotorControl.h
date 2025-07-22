@@ -1,5 +1,5 @@
-#ifndef ROBOT_H
-#define ROBOT_H
+#ifndef MOTORCONTROL_H
+#define MOTORCONTROL_H
 
 #include "InverseKinematics.h"
 #include <Arduino.h>

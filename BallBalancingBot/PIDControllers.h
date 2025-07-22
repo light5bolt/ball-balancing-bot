@@ -1,7 +1,7 @@
-#ifndef LEG_H
-#define LEG_H
+#ifndef PIDCONTROLLERS_H
+#define PIDCONTROLLERS_H
 
-#include "Robot.h"
+#include "MotorControl.h"
 #include "InverseKinematics.h"
 #include <Arduino.h>
 #include <math.h>
@@ -13,6 +13,11 @@ void pid_balance(double setpoint_x, double setpoint_y, bool print_output = 1);
 void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay, bool print_output = 1);
 void move_line(double rx, double ry, double speed, int repeat=0);
 void move_ellipse(double rx, double ry, double speed, double repeat=0);
+void move_square(double side_length, double speed, int repeat=0);
+void move_figure8(double radius, double speed, int repeat=0);
+void move_spiral(double max_radius, double speed, int repeat=0);
+void move_star(double radius, double speed, int repeat=0);
+void move_heart(double size, double speed, int repeat=0);
 
 
 #endif

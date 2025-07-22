@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include "InverseKinematics.h"
-#include "Robot.h"
+#include "MotorControl.h"
 #include "Screen.h"
-#include "Controllers.h"
+#include "PIDControllers.h"
 
 void setup() {
   Serial.begin(115200);
@@ -18,7 +18,8 @@ void setup() {
 }
 
 void loop() {
-  move_line(30, 30, 20, 2);
-
-  move_ellipse(25, 25, 50, 2);
+  move_star(30, 20, 2);
+  move_figure8(30, 20, 2);
+  move_spiral(40, 30, 2);
+  move_heart(40, 20, 2);
 }

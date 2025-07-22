@@ -1,4 +1,4 @@
-#include "Robot.h"
+#include "MotorControl.h"
 
 #define ANGLE_TO_ORIGIN_A 71 // angle offset
 #define ANGLE_TO_ORIGIN_B 66.75// angle offset

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <math.h>
-#include "Controllers.h"
+#include "PIDControllers.h"
 
 // PID Constants
 #define kp .8  //.8
@@ -44,6 +44,31 @@ void pid_balance(double setpoint_x, double setpoint_y, bool print_output) {
 
 
     if (detected) {
+    // Output data for plotting (every 10th iteration to avoid overwhelming)
+    static int plot_counter = 0;
+    if (plot_counter % 10 == 0 && print_output) {
+      // Format for Arduino Serial Plotter
+      Serial.print("Ball_X:");
+      Serial.print(p.x_mm);
+      Serial.print(",");
+      Serial.print("Ball_Y:");
+      Serial.print(p.y_mm);
+      Serial.print(",");
+      Serial.print("Target_X:");
+      Serial.print(setpoint_x);
+      Serial.print(",");
+      Serial.print("Target_Y:");
+      Serial.println(setpoint_y);
+      
+      // Alternative: CSV format for external plotting
+      // Serial.print(millis());
+      // Serial.print(",");
+      // Serial.print(p.x_mm);
+      // Serial.print(",");
+      // Serial.println(p.y_mm);
+    }
+    plot_counter++;
+
       last_detected_time = t;
 
       // Predictive velocity control
@@ -169,7 +194,7 @@ void move_line(double rx, double ry, double speed, int repeat) {
       move_to_point(x, y, speed);
     }
   }
-  Serial.println("---------------Command finished--------------");
+  Serial.println("---------------Line pattern finished--------------");
 }
 
 // Moves in an ellipse pattern. rx = radius in x direction, ry = radius in y direction, speed: (10-50ms), repeat = num of times (0 = infinite loop)
@@ -188,5 +213,109 @@ void move_ellipse(double rx, double ry, double speed, double repeat) {
       move_to_point(x, y, speed);
     }
   }
-  Serial.println("---------------Command finished--------------");
+  Serial.println("---------------Ellipse pattern finished--------------");
+}
+
+
+// Moves in a square pattern
+void move_square(double side_length, double speed, int repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
+  double half_side = side_length / 2;
+  
+  move_to_point(-half_side, -half_side, 2000); // Start at bottom-left corner
+  
+  for (int i = 0; i < cycles; i++) {
+    // Bottom edge (left to right)
+    move_to_point(half_side, -half_side, speed * 50);
+    // Right edge (bottom to top)
+    move_to_point(half_side, half_side, speed * 50);
+    // Top edge (right to left)
+    move_to_point(-half_side, half_side, speed * 50);
+    // Left edge (top to bottom)
+    move_to_point(-half_side, -half_side, speed * 50);
+  }
+  Serial.println("---------------Square pattern finished--------------");
+}
+
+// Moves in a figure-8 pattern
+void move_figure8(double radius, double speed, int repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
+  
+  move_to_point(0, 0, 2000); // Start at center
+  
+  for (int i = 0; i < cycles; i++) {
+    double steps = 200;
+    
+    for (int j = 0; j <= steps; j++) {
+      double t = (double)j / steps;
+      double angle = 4 * PI * t; // Two full circles
+      double x = radius * sin(angle);
+      double y = radius * sin(2 * angle) / 2; // Creates the figure-8 shape
+      move_to_point(x, y, speed);
+    }
+  }
+  Serial.println("---------------Figure-8 pattern finished--------------");
+}
+
+// Moves in a spiral pattern (outward)
+void move_spiral(double max_radius, double speed, int repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
+  
+  move_to_point(0, 0, 2000); // Start at center
+  
+  for (int i = 0; i < cycles; i++) {
+    double steps = 200;
+    
+    for (int j = 0; j <= steps; j++) {
+      double t = (double)j / steps;
+      double angle = 6 * PI * t; // Three full rotations
+      double r = max_radius * t; // Gradually increase radius
+      double x = r * cos(angle);
+      double y = r * sin(angle);
+      move_to_point(x, y, speed);
+    }
+  }
+  Serial.println("---------------Spiral pattern finished--------------");
+}
+
+// Moves in a star pattern (5-pointed)
+void move_star(double radius, double speed, int repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
+  
+  for (int i = 0; i < cycles; i++) {
+    // Define the 5 points of the star
+    double angles[5] = {-PI/2, -PI/2 + 4*PI/5, -PI/2 + 8*PI/5, -PI/2 + 2*PI/5, -PI/2 + 6*PI/5};
+    
+    // Move to first point
+    double x = radius * cos(angles[0]);
+    double y = radius * sin(angles[0]);
+    move_to_point(x, y, 1000);
+    
+    // Draw the star by connecting every second point
+    for (int j = 0; j < 5; j++) {
+      int next_point = (j + 2) % 5;
+      x = radius * cos(angles[next_point]);
+      y = radius * sin(angles[next_point]);
+      move_to_point(x, y, speed * 100);
+    }
+  }
+  Serial.println("---------------Star pattern finished--------------");
+}
+
+// Moves in a heart pattern
+void move_heart(double size, double speed, int repeat) {
+  int cycles = (repeat == 0) ? 9999 : repeat;
+  
+  for (int i = 0; i < cycles; i++) {
+    double steps = 200;
+    
+    for (int j = 0; j <= steps; j++) {
+      double t = (double)j / steps * 2 * PI;
+      // Parametric heart equation
+      double x = size * 16 * pow(sin(t), 3) / 16;
+      double y = size * (13 * cos(t) - 5 * cos(2*t) - 2 * cos(3*t) - cos(4*t)) / 16;
+      move_to_point(x, y, speed);
+    }
+  }
+  Serial.println("---------------Heart pattern finished--------------");
 }
