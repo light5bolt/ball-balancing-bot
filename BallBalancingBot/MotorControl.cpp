@@ -1,11 +1,11 @@
 #include "MotorControl.h"
 
-#define ANGLE_TO_ORIGIN_A 71 // angle offset
-#define ANGLE_TO_ORIGIN_B 66.75// angle offset
-#define ANGLE_TO_ORIGIN_C 61.95// angle offset
-#define ENA 0 // ENA pin
-#define h0 87 // height of platform when motors are at zero position
-#define ks 100.0 // a constant to change our proportional speed function
+#define ANGLE_TO_ORIGIN_A 71     // angle offset
+#define ANGLE_TO_ORIGIN_B 66.75  // angle offset
+#define ANGLE_TO_ORIGIN_C 61.95  // angle offset
+#define ENA 0                    // ENA pin
+#define h0 87                    // height of platform when motors are at zero position
+#define ks 100.0                 // a constant to change our proportional speed function
 
 // setup for steppers
 AccelStepper motorA(1, 3, 2);  //(driver type, STEP, DIR) Driver A
@@ -13,9 +13,9 @@ AccelStepper motorB(1, 5, 4);  //(driver type, STEP, DIR) Driver B
 AccelStepper motorC(1, 7, 6);  //(driver type, STEP, DIR) Driver C
 MultiStepper motors;           // Create instance of MultiStepper
 
-long int pos[3]; // stores positions of stepper motors
-extern double speed[3]; // an initialization of the stepper motor speeds
-extern double speed_prev[3]; // an array to store previous speeds which we use later to change speed proportionally
+long int pos[3];              // stores positions of stepper motors
+extern double speed[3];       // an initialization of the stepper motor speeds
+extern double speed_prev[3];  // an array to store previous speeds which we use later to change speed proportionally
 
 //initializes motors by adding them in multistepper class
 void motor_init() {
@@ -30,7 +30,7 @@ void motor_init() {
 
 // angle in degrees to the nearest step (rounds up)
 long int angle_to_steps(double angle) {
-  return round((3200 / 360)  * angle);
+  return round((3200 / 360) * angle);
 }
 
 //steps to nearest angle (as a decimal)
@@ -89,35 +89,35 @@ void move_to_angle(double theta_deg, double phi_deg, double h, double speed[3]) 
   //calculates speed to each motor gets to target position at the same time
   motors.moveTo(pos);
   for (int i = 0; i < 10; i++) {
-    if (motors.run()) break; // Stop if all motors reached target
+    if (motors.run()) break;  // Stop if all motors reached target
   }
 }
 
 //Calculates proportional motor speeds for all three motors whenever function gets called.
 void speed_controller(double speed[3]) {
-  static double current_pos[3]; // Variable for current positions
+  static double current_pos[3];  // Variable for current positions
 
   for (int i = 0; i < 3; i++) {
     speed_prev[i] = speed[i];
-    current_pos[i] = (i==0) * motorA.currentPosition() + (i==1) * motorB.currentPosition() + (i==2) * motorC.currentPosition(); // Finds current position of motor
-    speed[i] = abs(current_pos[i] - pos[i]) * ks; // Position error * speed gain
-    speed[i] = constrain(speed[i], speed_prev[i] - 300, speed_prev[i] + 300); // Constrains speed so there aren't any sudden jumps. Essentially substituting for our D term in PID.
+    current_pos[i] = (i == 0) * motorA.currentPosition() + (i == 1) * motorB.currentPosition() + (i == 2) * motorC.currentPosition();  // Finds current position of motor
+    speed[i] = abs(current_pos[i] - pos[i]) * ks;                                                                                      // Position error * speed gain
+    speed[i] = constrain(speed[i], speed_prev[i] - 300, speed_prev[i] + 300);                                                          // Constrains speed so there aren't any sudden jumps. Essentially substituting for our D term in PID.
     speed[i] = constrain(speed[i], 0, 1300);
   }
 }
 
 // Debugger function to test motor speeds
 void test_motor_speed() {
-    motorA.setMaxSpeed(4000);
-    motorA.setAcceleration(10000);
-    motorA.moveTo(500); // Move 1000 steps
-    
-    unsigned long start = millis();
-    while (motorA.distanceToGo() != 0) {
-        motorA.run();
-    }
-    unsigned long duration = millis() - start;
-    
-    Serial.println("Time to move 500 steps: " + String(duration) + "ms");
-    Serial.println("Actual speed: " + String(500.0 / (duration / 500.0)) + " steps/sec");
+  motorA.setMaxSpeed(4000);
+  motorA.setAcceleration(10000);
+  motorA.moveTo(500);  // Move 1000 steps
+
+  unsigned long start = millis();
+  while (motorA.distanceToGo() != 0) {
+    motorA.run();
+  }
+  unsigned long duration = millis() - start;
+
+  Serial.println("Time to move 500 steps: " + String(duration) + "ms");
+  Serial.println("Actual speed: " + String(500.0 / (duration / 500.0)) + " steps/sec");
 }

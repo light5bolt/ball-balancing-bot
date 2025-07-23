@@ -30,12 +30,12 @@ void setup() {
   delay(1000);
 
   // Headers for CSV file reading
-  Serial.println("Time(ms),Ball_X(mm),Ball_Y(mm),Target_X(mm),Target_Y(mm)");
+  //Serial.println("Time(ms),Ball_X(mm),Ball_Y(mm),Target_X(mm),Target_Y(mm)");
 }
 
 void loop() {
-  move_star(30, 20, 2);
+  //move_star(30, 20, 2);
   move_figure8(30, 20, 2);
-  move_spiral(40, 30, 2);
-  move_heart(40, 20, 2);
+  //move_spiral(40, 30, 2);
+  move_heart(40, 20);
 }

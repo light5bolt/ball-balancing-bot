@@ -3,8 +3,8 @@
 // Touchscreen wiring (lettering on the ribbon pin is the underside, red wire goes to 14)
 #define YP 16  // Must be an analog pin
 #define XM 15  // Must be an analog pin
-#define YM 14  
-#define XP 17   
+#define YM 14
+#define XP 17
 
 
 // Touch screen calibration (adjust if needed)
@@ -21,7 +21,7 @@
 #define MINPRESSURE .000000000001
 #define MAXPRESSURE 500
 
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 200); // 300 = ohms of touchscreen
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 200);  // 300 = ohms of touchscreen
 TSPoint currentPoint;
 
 //map command but can return floating point values
@@ -42,7 +42,7 @@ bool check_detected() {
   pinMode(YP, OUTPUT);
 
   return (currentPoint.x > 0 && currentPoint.y < 1023);
-  }
+}
 
 //returns coordinates of the ball's position
 coords get_coords() {
@@ -75,5 +75,3 @@ coords get_coords() {
 
   return p;
 }
-
-

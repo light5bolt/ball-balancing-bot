@@ -12,8 +12,8 @@ struct Triangle {
 
 // Structure to hold IK solver results
 struct IKResult {
-  double alpha;  // elbow angle in degrees
-  double theta2; // shoulder angle in degrees
+  double alpha;   // elbow angle in degrees
+  double theta2;  // shoulder angle in degrees
 };
 
 //Structure to hold calculated angles for each motor. Combines calculate_triangle and ik_solver functions

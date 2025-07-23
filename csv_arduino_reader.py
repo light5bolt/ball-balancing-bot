@@ -14,29 +14,17 @@ for port in ports:
 f = open("data.csv", "w", newline='')
 f.truncate()
 
-val = input("Select Port: COM")
-
-for x in range(0, len(port_list)):
-    if port_list[x].startswith("COM" + str(val)):
-        port_var = "COM" + str(val)
-        print(f"Selected: {port_list[x]}")
-        break
-
-if not port_var:
-    print(f"Port COM{val} not found!")
-    exit()
-
 
 # Create and configure serial connection
 try:
     serialCom = serial.Serial()
     serialCom.baudrate = 115200
-    serialCom.port = port_var
+    serialCom.port = "COM5"
     serialCom.timeout = 2  # Add timeout
     
     # Open the connection
     serialCom.open()
-    print(f"Connected to {port_var}")
+    print(f"Connected to COM5")
 
     # Resets Arduino
     serialCom.setDTR(False)

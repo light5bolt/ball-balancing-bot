@@ -50,17 +50,17 @@ void pid_balance(double setpoint_x, double setpoint_y) {
       // Output data for plotting (every 10th iteration to avoid overwhelming)
       static int plot_counter = 0;
       if (plot_counter % 10 == 0 && !enable_serial_output) {
-        
-      // CSV format: Timestamp, Ball_X, Ball_Y, Target_X, Target_Y
-      Serial.print(millis());
-      Serial.print(",");
-      Serial.print(p.x_mm, 3);        // 3 decimal places
-      Serial.print(",");
-      Serial.print(p.y_mm, 3);
-      Serial.print(",");
-      Serial.print(setpoint_x, 3);
-      Serial.print(",");
-      Serial.println(setpoint_y, 3);
+
+        // CSV format: Timestamp, Ball_X, Ball_Y, Target_X, Target_Y
+        Serial.print(millis());
+        Serial.print(",");
+        Serial.print(p.x_mm, 3);  // 3 decimal places
+        Serial.print(",");
+        Serial.print(p.y_mm, 3);
+        Serial.print(",");
+        Serial.print(setpoint_x, 3);
+        Serial.print(",");
+        Serial.println(setpoint_y, 3);
       }
       plot_counter++;
 
@@ -75,11 +75,11 @@ void pid_balance(double setpoint_x, double setpoint_y) {
 
         error_prev[i] = error[i];
         double error_current = (i == 0) ? (p.y_mm - setpoint_y) : (p.x_mm - setpoint_x);  //Calculates error based on ball position
-        double v = constrain(ball_vel[i], -1000, 1000);                                   
+        double v = constrain(ball_vel[i], -1000, 1000);
         error[i] = error_current;
-        integ[i] += error[i] * dt;                               
-        integ[i] = constrain(integ[i], -50, 50);                       // Constrains integral values to prevent windup
-        deriv[i] = (error[i] - error_prev[i]) / dt;                    
+        integ[i] += error[i] * dt;
+        integ[i] = constrain(integ[i], -50, 50);  // Constrains integral values to prevent windup
+        deriv[i] = (error[i] - error_prev[i]) / dt;
         deriv[i] = isnan(deriv[i]) || isinf(deriv[i]) ? 0 : deriv[i];  // Simple check to eliminate nonreal or infinite numbers, as derivative is being divided by a number that could be zero
 
         // Adjusts gain constants if ball is close to target
@@ -107,8 +107,8 @@ void pid_balance(double setpoint_x, double setpoint_y) {
     else {
       // Check if ball has been undetected for 3 seconds (3000 milliseconds)
       if (t - last_detected_time >= 3000) {
-        integ[0] = integ[1] = 0;  // Reset integral terms after 3 seconds
-        move_to_angle(0, 0, 80, speed); // Goes back to home
+        integ[0] = integ[1] = 0;         // Reset integral terms after 3 seconds
+        move_to_angle(0, 0, 80, speed);  // Goes back to home
       }
 
       //waits and checks again if ball is detected (eliminates error from input)
@@ -116,7 +116,7 @@ void pid_balance(double setpoint_x, double setpoint_y) {
       detected = check_detected();
       if (!detected) {
         //Serial.println("Ball not detected!");
-        return; // exits current iteration
+        return;  // exits current iteration
       }
     }
     t_prev = t;  // resets value of t_prev
