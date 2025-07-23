@@ -40,7 +40,6 @@ double steps_to_angle(int steps) {
 
 //moves motors to position where bottom leg is parallel to the ground. this is the zero position
 void home_motors() {
-
   motorA.setMaxSpeed(1000);
   motorB.setMaxSpeed(1000);
   motorC.setMaxSpeed(1000);
@@ -58,7 +57,7 @@ void home_motors() {
   motorB.setCurrentPosition(0);
   motorC.setCurrentPosition(0);
 
-  Serial.println("Motors to zero position");
+  //Serial.println("Motors to zero position");
 }
 
 //goes to zero position (home). requires home_motors first.
@@ -82,11 +81,6 @@ void move_to_angle(double theta_deg, double phi_deg, double h, double speed[3]) 
   motorB.setMaxSpeed(speed[1]);
   motorC.setMaxSpeed(speed[2]);
 
-  // Use your calculated speeds as target speeds
-  //motorA.setSpeed(speed[0]);
-  //motorB.setSpeed(speed[1]);
-  //motorC.setSpeed(speed[2]);
-
   //sets acceleration proportional to a calculated speed
   motorA.setAcceleration(speed[0] * 50);
   motorB.setAcceleration(speed[1] * 50);
@@ -94,13 +88,12 @@ void move_to_angle(double theta_deg, double phi_deg, double h, double speed[3]) 
 
   //calculates speed to each motor gets to target position at the same time
   motors.moveTo(pos);
-
   for (int i = 0; i < 10; i++) {
     if (motors.run()) break; // Stop if all motors reached target
   }
 }
 
-//Calculates proportional motor speeds for all three motors whenever function gets called. Basically a PID controller for speed but just using the Proportional controller. 
+//Calculates proportional motor speeds for all three motors whenever function gets called.
 void speed_controller(double speed[3]) {
   static double current_pos[3]; // Variable for current positions
 
@@ -110,10 +103,10 @@ void speed_controller(double speed[3]) {
     speed[i] = abs(current_pos[i] - pos[i]) * ks; // Position error * speed gain
     speed[i] = constrain(speed[i], speed_prev[i] - 300, speed_prev[i] + 300); // Constrains speed so there aren't any sudden jumps. Essentially substituting for our D term in PID.
     speed[i] = constrain(speed[i], 0, 1300);
-    //Serial.println("Motor " + String(i) + " - Current: " + current_pos[i] + ", Target: " + pos[i] + ", Error: " + abs(pos[i] - current_pos[i]) + ", Speed: " + speed[i]);
   }
 }
 
+// Debugger function to test motor speeds
 void test_motor_speed() {
     motorA.setMaxSpeed(4000);
     motorA.setAcceleration(10000);
