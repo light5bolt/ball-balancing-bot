@@ -86,7 +86,7 @@ void pid_balance(double setpoint_x, double setpoint_y) {
         if (abs(error[i]) < 25) {
           output[i] = kp_adj * error[i] + ki_adj * integ[i] + kd_adj * deriv[i];
         } else {
-          output[i] = kp * error[i] + ki * integ[i] + kd * deriv[i] - kv * v;
+          output[i] = kp * error[i] + ki * integ[i] + kd * deriv[i];
         }
         output_angles[i] = constrain(output[i], -max_output, max_output) * (max_angle / max_output);  // scales down PID output and maps it to an angle
       }

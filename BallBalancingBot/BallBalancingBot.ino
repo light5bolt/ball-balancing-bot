@@ -34,8 +34,9 @@ void setup() {
 }
 
 void loop() {
-  //move_star(30, 20, 2);
-  move_figure8(30, 20, 2);
-  //move_spiral(40, 30, 2);
-  move_heart(40, 20);
+  //pid_balance(0,0);
+  move_ellipse(30, 20, 20, 4);
+  move_figure8(30, 20, 4);
+  move_square(30, 20, 4);
+  move_heart(40, 20, 4);
 }
